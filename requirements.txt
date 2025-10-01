@@ -1,1 +1,7 @@
-
+pandas
+matplotlib
+seaborn
+streamlit
+scikit-learn
+jupyterlab
+python-dotenv
