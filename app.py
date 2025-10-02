@@ -141,10 +141,14 @@ with st.sidebar:
     st.write("Upload data or generate predictions.")
     
     uploaded_file = st.file_uploader("📂 Upload CSV Data", type=["csv"])
+    
+    # --- CORRECTED FILE PATH ---
+    DEFAULT_DATA_PATH = "data/India_Condom_Market_Dataset.csv"
+    
     if uploaded_file is not None:
         df = load_and_clean_data(uploaded_file)
     else:
-        df = load_and_clean_data("India_Condom_Market_Dataset.csv")
+        df = load_and_clean_data(DEFAULT_DATA_PATH)
 
     if model and df is not None and not df.empty:
         with st.expander("🔮 Market Size Predictor", expanded=False):
@@ -168,11 +172,11 @@ with st.sidebar:
                     # Using the new, cleaned column names for the prediction input
                     input_data = pd.DataFrame([{
                         'year': year,
-                        'cagr_%': 10.0, 'material_type': material_type.lower(),
+                        'cagr_pct': 10.0, 'material_type': material_type.lower(),
                         'product_type': product_type.lower(), 'distribution_channel': 'e-commerce',
                         'region': region.lower(), 'market_penetration': 'medium',
-                        'growth_rate_%': growth_rate, 'brand_name': brand_name.lower(),
-                        'market_share_%': 20.0, 'revenue_contribution_%': 5.0,
+                        'growth_rate_pct': growth_rate, 'brand_name': brand_name.lower(),
+                        'market_share_pct': 20.0, 'revenue_contribution_pct': 5.0,
                         'innovation_index': 5.0, 'regulatory_impact': 'medium',
                         'awareness_campaign_impact': 50.0
                     }])
@@ -193,7 +197,7 @@ if df is not None and not df.empty:
             with st.spinner("Consulting Sass, the AI strategist..."):
                 # Using the new, cleaned column names
                 top_brands = df['brand_name'].value_counts().nlargest(3).index.str.title().tolist()
-                fastest_region = df.groupby('region')['growth_rate_%'].mean().idxmax().title()
+                fastest_region = df.groupby('region')['growth_rate_pct'].mean().idxmax().title()
                 data_summary = f"Top 3 brands: {', '.join(top_brands)}. Fastest-growing region: {fastest_region}."
                 insights = get_gemini_insights(data_summary)
                 st.markdown(f"<div class='card'>{insights}</div>", unsafe_allow_html=True)
