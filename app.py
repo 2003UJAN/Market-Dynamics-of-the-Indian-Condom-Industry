@@ -67,11 +67,12 @@ st.markdown("""
             background: linear-gradient(90deg, #ff6b6b, #ff4b4b);
         }
         .card {
-            padding: 15px;
+            padding: 20px;
             background-color: #1a1a1a;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.4);
             margin-bottom: 20px;
+            border-left: 5px solid #ff4b4b;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -170,8 +171,7 @@ with st.sidebar:
                 
                 submitted = st.form_submit_button("🚀 Predict Market Size")
                 if submitted:
-                    # The model expects the original column names before cleaning
-                    # The pipeline inside the model will handle the encoding
+                    # The model's internal pipeline expects the original column names
                     input_data = pd.DataFrame([{
                         'Year': year,
                         'CAGR (%)': 10.0, 'Material Type': material_type.lower(),
