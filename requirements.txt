@@ -5,3 +5,5 @@ streamlit
 scikit-learn
 jupyterlab
 python-dotenv
+huggingface-hub
+requests
