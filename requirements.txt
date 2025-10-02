@@ -2,7 +2,7 @@ streamlit
 pandas
 python-dotenv
 google-generativeai
-scikit-learn==1.4.2
+scikit-learn
 joblib
 huggingface-hub
 matplotlib
