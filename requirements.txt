@@ -4,6 +4,10 @@ seaborn
 streamlit
 scikit-learn
 jupyterlab
+notebook
+ipykernel
 python-dotenv
 huggingface-hub
 requests
+joblib
+google-generativeai
