@@ -2,27 +2,37 @@ import pandas as pd
 import streamlit as st
 
 @st.cache_data # Use Streamlit's cache to avoid reloading data on every interaction
-def load_data(file_path: str) -> pd.DataFrame:
+def load_and_clean_data(file_path: str) -> pd.DataFrame:
     """
-    Loads the condom market dataset from a specified CSV file path.
+    Loads the dataset from a CSV file, cleans the column names,
+    and corrects data types.
 
     Args:
         file_path (str): The path to the CSV file.
 
     Returns:
-        pd.DataFrame: A pandas DataFrame containing the dataset.
-                       Returns an empty DataFrame if the file is not found.
+        pd.DataFrame: A cleaned and preprocessed pandas DataFrame.
     """
     try:
         df = pd.read_csv(file_path)
-        # Basic data cleaning (can be expanded)
-        df['Year'] = pd.to_numeric(df['Year'], errors='coerce')
-        df.dropna(subset=['Year'], inplace=True)
-        df['Year'] = df['Year'].astype(int)
+
+        # ---> CRITICAL FIX: Strip whitespace from all column names <---
+        df.columns = df.columns.str.strip()
+        
+        # Correct data types
+        df['Event Date'] = pd.to_datetime(df['Event Date'])
+        df['Year'] = pd.to_datetime(df['Year'], format='%Y').dt.year
+        
+        # Standardize categorical variables for consistency
+        for col in df.select_dtypes(include=['object']).columns:
+            df[col] = df[col].str.strip().str.lower()
+            
         return df
+        
     except FileNotFoundError:
         st.error(f"Error: The file was not found at {file_path}")
         return pd.DataFrame() # Return an empty dataframe on error
     except Exception as e:
         st.error(f"An error occurred while loading the data: {e}")
         return pd.DataFrame()
+
