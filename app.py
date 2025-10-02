@@ -129,7 +129,9 @@ def load_model_from_hf():
         st.success("✅ Market prediction model loaded successfully!")
         return model
     except Exception as e:
-        st.error(f"❌ Failed to load model: {e}")
+        st.error(f"❌ Failed to load model from Hugging Face.")
+        st.error(f"This is often due to a scikit-learn version mismatch. Ensure your requirements.txt pins the correct version.")
+        st.error(f"Specific Error: {e}")
         return None
 
 model = load_model_from_hf()
@@ -142,7 +144,6 @@ with st.sidebar:
     
     uploaded_file = st.file_uploader("📂 Upload CSV Data", type=["csv"])
     
-    # --- CORRECTED FILE PATH ---
     DEFAULT_DATA_PATH = "data/India_Condom_Market_Dataset.csv"
     
     if uploaded_file is not None:
@@ -154,7 +155,7 @@ with st.sidebar:
         with st.expander("🔮 Market Size Predictor", expanded=False):
             with st.form("prediction_form"):
                 st.subheader("📝 Enter Market Scenario")
-                # Using the new, cleaned column names
+                # Using the cleaned column names from data_loader
                 unique_brands = sorted(df['brand_name'].str.title().unique())
                 unique_regions = sorted(df['region'].str.title().unique())
                 unique_materials = sorted(df['material_type'].str.title().unique())
@@ -169,16 +170,17 @@ with st.sidebar:
                 
                 submitted = st.form_submit_button("🚀 Predict Market Size")
                 if submitted:
-                    # Using the new, cleaned column names for the prediction input
+                    # The model expects the original column names before cleaning
+                    # The pipeline inside the model will handle the encoding
                     input_data = pd.DataFrame([{
-                        'year': year,
-                        'cagr_pct': 10.0, 'material_type': material_type.lower(),
-                        'product_type': product_type.lower(), 'distribution_channel': 'e-commerce',
-                        'region': region.lower(), 'market_penetration': 'medium',
-                        'growth_rate_pct': growth_rate, 'brand_name': brand_name.lower(),
-                        'market_share_pct': 20.0, 'revenue_contribution_pct': 5.0,
-                        'innovation_index': 5.0, 'regulatory_impact': 'medium',
-                        'awareness_campaign_impact': 50.0
+                        'Year': year,
+                        'CAGR (%)': 10.0, 'Material Type': material_type.lower(),
+                        'Product Type': product_type.lower(), 'Distribution Channel': 'e-commerce',
+                        'Region': region.lower(), 'Market Penetration': 'medium',
+                        'Growth Rate (%)': growth_rate, 'Brand Name': brand_name.lower(),
+                        'Market Share (%)': 20.0, 'Revenue Contribution (%)': 5.0,
+                        'Innovation Index': 5.0, 'Regulatory Impact': 'medium',
+                        'Awareness Campaign Impact': 50.0
                     }])
                     with st.spinner("⚡ Running prediction..."):
                         prediction = model.predict(input_data)
@@ -195,7 +197,7 @@ if df is not None and not df.empty:
     if st.button("✨ Generate AI Insights"):
         if gen_model_base:
             with st.spinner("Consulting Sass, the AI strategist..."):
-                # Using the new, cleaned column names
+                # Using cleaned column names for analysis
                 top_brands = df['brand_name'].value_counts().nlargest(3).index.str.title().tolist()
                 fastest_region = df.groupby('region')['growth_rate_pct'].mean().idxmax().title()
                 data_summary = f"Top 3 brands: {', '.join(top_brands)}. Fastest-growing region: {fastest_region}."
@@ -220,5 +222,5 @@ if df is not None and not df.empty:
         st.pyplot(plot_regional_growth(df))
         st.pyplot(plot_brand_region_heatmap(df))
 else:
-    st.error("⚠️ No data available. Please upload a CSV or ensure the default dataset is present.")
+    st.error("⚠️ No data available. Please upload a CSV or ensure the default dataset is present in 'data/'.")
 
