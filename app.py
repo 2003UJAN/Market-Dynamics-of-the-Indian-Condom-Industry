@@ -82,14 +82,14 @@ gen_model_base = None
 if api_key:
     try:
         genai.configure(api_key=api_key)
-        gen_model_base = genai.GenerativeModel(model_name='gemini-2.0-flash')
+        gen_model_base = genai.GenerativeModel(model_name='gemini-1.5-flash-latest')
     except Exception as e:
         st.error(f"❌ Failed to configure Gemini API: {e}")
 else:
     st.warning("⚠️ Gemini API Key not found. AI analysis will be disabled.")
 
 
-# --- Gemini Insights Function (CORRECTED) ---
+# --- Gemini Insights Function ---
 def get_gemini_insights(data_summary: str):
     if not gen_model_base:
         return "AI analysis is disabled. Please provide a Gemini API key."
@@ -102,7 +102,6 @@ def get_gemini_insights(data_summary: str):
         "3. **🤫 Untapped Pleasures**: Identify one key untapped opportunity and explain the strategic move to capture it."
     )
     
-    # Re-initialize the model with the system prompt for this specific request
     model_with_prompt = genai.GenerativeModel(
         model_name='gemini-1.5-flash-latest',
         system_instruction=system_prompt
@@ -111,7 +110,6 @@ def get_gemini_insights(data_summary: str):
     user_prompt = f"Here is the data summary:\n{data_summary}"
     
     try:
-        # Call generate_content with just the user prompt string
         response = model_with_prompt.generate_content(user_prompt)
         return response.text
     except Exception as e:
@@ -152,10 +150,11 @@ with st.sidebar:
         with st.expander("🔮 Market Size Predictor", expanded=False):
             with st.form("prediction_form"):
                 st.subheader("📝 Enter Market Scenario")
-                unique_brands = sorted(df['brand name'].str.title().unique())
+                # Using the new, cleaned column names
+                unique_brands = sorted(df['brand_name'].str.title().unique())
                 unique_regions = sorted(df['region'].str.title().unique())
-                unique_materials = sorted(df['material type'].str.title().unique())
-                unique_products = sorted(df['product type'].str.title().unique())
+                unique_materials = sorted(df['material_type'].str.title().unique())
+                unique_products = sorted(df['product_type'].str.title().unique())
                 
                 year = st.number_input("📅 Year", min_value=2020, max_value=2040, value=2025)
                 brand_name = st.selectbox("🏷️ Brand", options=unique_brands)
@@ -166,15 +165,16 @@ with st.sidebar:
                 
                 submitted = st.form_submit_button("🚀 Predict Market Size")
                 if submitted:
+                    # Using the new, cleaned column names for the prediction input
                     input_data = pd.DataFrame([{
-                        'Year': year,
-                        'CAGR (%)': 10.0, 'Material Type': material_type.lower(),
-                        'Product Type': product_type.lower(), 'Distribution Channel': 'e-commerce',
-                        'Region': region.lower(), 'Market Penetration': 'medium',
-                        'Growth Rate (%)': growth_rate, 'Brand Name': brand_name.lower(),
-                        'Market Share (%)': 20.0, 'Revenue Contribution (%)': 5.0,
-                        'Innovation Index': 5.0, 'Regulatory Impact': 'medium',
-                        'Awareness Campaign Impact': 50.0
+                        'year': year,
+                        'cagr_%': 10.0, 'material_type': material_type.lower(),
+                        'product_type': product_type.lower(), 'distribution_channel': 'e-commerce',
+                        'region': region.lower(), 'market_penetration': 'medium',
+                        'growth_rate_%': growth_rate, 'brand_name': brand_name.lower(),
+                        'market_share_%': 20.0, 'revenue_contribution_%': 5.0,
+                        'innovation_index': 5.0, 'regulatory_impact': 'medium',
+                        'awareness_campaign_impact': 50.0
                     }])
                     with st.spinner("⚡ Running prediction..."):
                         prediction = model.predict(input_data)
@@ -191,8 +191,9 @@ if df is not None and not df.empty:
     if st.button("✨ Generate AI Insights"):
         if gen_model_base:
             with st.spinner("Consulting Sass, the AI strategist..."):
-                top_brands = df['brand name'].value_counts().nlargest(3).index.str.title().tolist()
-                fastest_region = df.groupby('region')['growth rate (%)'].mean().idxmax().title()
+                # Using the new, cleaned column names
+                top_brands = df['brand_name'].value_counts().nlargest(3).index.str.title().tolist()
+                fastest_region = df.groupby('region')['growth_rate_%'].mean().idxmax().title()
                 data_summary = f"Top 3 brands: {', '.join(top_brands)}. Fastest-growing region: {fastest_region}."
                 insights = get_gemini_insights(data_summary)
                 st.markdown(f"<div class='card'>{insights}</div>", unsafe_allow_html=True)
