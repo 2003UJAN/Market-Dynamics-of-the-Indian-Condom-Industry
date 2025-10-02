@@ -1,19 +1,20 @@
-# Environment variables
-.env
+Environment variables
 
-# Python virtual environment
+.env
+Python virtual environment
+
 venv/
 *.venv/
 env/
+Python cache
 
-# Python cache
-__pycache__/
+pycache/
 *.pyc
+IDE and OS files
 
-# IDE and OS files
 .vscode/
 .idea/
 .DS_Store
+Notebook checkpoints
 
-# Notebook checkpoints
 .ipynb_checkpoints/
