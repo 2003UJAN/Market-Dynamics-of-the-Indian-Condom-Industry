@@ -78,38 +78,46 @@ st.markdown("""
 
 # --- Configure Gemini API ---
 api_key = os.getenv("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
-gen_model = None
+gen_model_base = None
 if api_key:
     try:
         genai.configure(api_key=api_key)
-        gen_model = genai.GenerativeModel(model_name='gemini-1.5-flash-latest')
+        gen_model_base = genai.GenerativeModel(model_name='gemini-2.0-flash')
     except Exception as e:
         st.error(f"❌ Failed to configure Gemini API: {e}")
 else:
     st.warning("⚠️ Gemini API Key not found. AI analysis will be disabled.")
 
-# --- Gemini Insights Function ---
+
+# --- Gemini Insights Function (CORRECTED) ---
 def get_gemini_insights(data_summary: str):
-    if not gen_model:
+    if not gen_model_base:
         return "AI analysis is disabled. Please provide a Gemini API key."
 
     system_prompt = (
         "You are 'Sass,' a witty, sharp, and slightly naughty business strategist specializing in the sexual wellness market. "
-        "Your tone is playful but insights are serious. Provide three sections: "
-        "1. **🔥 Hot & Heavy Insights**: sharp business observations. "
-        "2. **💡 Naughty Marketing Slogans**: edgy, clever slogans. "
-        "3. **🤫 Untapped Pleasures**: one untapped opportunity."
+        "Your tone is playful but your insights are deadly serious and incredibly smart. Provide three sections in your response, using Markdown: "
+        "1. **🔥 Hot & Heavy Insights**: Your sharpest, most direct business observations. "
+        "2. **💡 Naughty Marketing Slogans**: A few clever, edgy, and memorable marketing slogans. "
+        "3. **🤫 Untapped Pleasures**: Identify one key untapped opportunity and explain the strategic move to capture it."
+    )
+    
+    # Re-initialize the model with the system prompt for this specific request
+    model_with_prompt = genai.GenerativeModel(
+        model_name='gemini-1.5-flash-latest',
+        system_instruction=system_prompt
     )
 
+    user_prompt = f"Here is the data summary:\n{data_summary}"
+    
     try:
-        response = gen_model.generate_content([
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Here is the data summary:\n{data_summary}"}
-        ])
+        # Call generate_content with just the user prompt string
+        response = model_with_prompt.generate_content(user_prompt)
         return response.text
     except Exception as e:
         st.error(f"Error contacting Gemini API: {e}")
-        return "⚠️ AI insights unavailable."
+        return "⚠️ AI insights unavailable at the moment."
+
 
 # --- Load Model from Hugging Face ---
 @st.cache_resource
@@ -160,18 +168,12 @@ with st.sidebar:
                 if submitted:
                     input_data = pd.DataFrame([{
                         'Year': year,
-                        'CAGR (%)': 10.0,
-                        'Material Type': material_type.lower(),
-                        'Product Type': product_type.lower(),
-                        'Distribution Channel': 'e-commerce',
-                        'Region': region.lower(),
-                        'Market Penetration': 'medium',
-                        'Growth Rate (%)': growth_rate,
-                        'Brand Name': brand_name.lower(),
-                        'Market Share (%)': 20.0,
-                        'Revenue Contribution (%)': 5.0,
-                        'Innovation Index': 5.0,
-                        'Regulatory Impact': 'medium',
+                        'CAGR (%)': 10.0, 'Material Type': material_type.lower(),
+                        'Product Type': product_type.lower(), 'Distribution Channel': 'e-commerce',
+                        'Region': region.lower(), 'Market Penetration': 'medium',
+                        'Growth Rate (%)': growth_rate, 'Brand Name': brand_name.lower(),
+                        'Market Share (%)': 20.0, 'Revenue Contribution (%)': 5.0,
+                        'Innovation Index': 5.0, 'Regulatory Impact': 'medium',
                         'Awareness Campaign Impact': 50.0
                     }])
                     with st.spinner("⚡ Running prediction..."):
@@ -187,27 +189,31 @@ if df is not None and not df.empty:
     # AI Insights
     st.header("🤖 AI Strategic Advisor")
     if st.button("✨ Generate AI Insights"):
-        with st.spinner("Consulting Sass, the AI strategist..."):
-            top_brands = df['brand name'].value_counts().nlargest(3).index.str.title().tolist()
-            fastest_region = df.groupby('region')['growth rate (%)'].mean().idxmax().title()
-            data_summary = f"Top 3 brands: {', '.join(top_brands)}. Fastest-growing region: {fastest_region}."
-            insights = get_gemini_insights(data_summary)
-            st.markdown(insights)
+        if gen_model_base:
+            with st.spinner("Consulting Sass, the AI strategist..."):
+                top_brands = df['brand name'].value_counts().nlargest(3).index.str.title().tolist()
+                fastest_region = df.groupby('region')['growth rate (%)'].mean().idxmax().title()
+                data_summary = f"Top 3 brands: {', '.join(top_brands)}. Fastest-growing region: {fastest_region}."
+                insights = get_gemini_insights(data_summary)
+                st.markdown(f"<div class='card'>{insights}</div>", unsafe_allow_html=True)
+        else:
+            st.warning("⚠️ AI analysis is disabled. Please provide a Gemini API key.")
     st.markdown("---")
 
     # Visualizations
     tab1, tab2, tab3 = st.tabs(["📈 Market Overview", "🏢 Brand Deep Dive", "🗺️ Regional Hotspots"])
     with tab1:
-        st.subheader("📊 Market Trends")
+        st.subheader("Market Trends")
         st.pyplot(plot_market_size_trend(df))
         st.pyplot(plot_correlation_heatmap(df))
     with tab2:
-        st.subheader("🏢 Brand & Company Analysis")
+        st.subheader("Brand & Company Analysis")
         st.pyplot(plot_brand_market_share(df))
         st.pyplot(plot_top_company_activity(df))
     with tab3:
-        st.subheader("🗺️ Regional Insights")
+        st.subheader("Regional Insights")
         st.pyplot(plot_regional_growth(df))
         st.pyplot(plot_brand_region_heatmap(df))
 else:
     st.error("⚠️ No data available. Please upload a CSV or ensure the default dataset is present.")
+
